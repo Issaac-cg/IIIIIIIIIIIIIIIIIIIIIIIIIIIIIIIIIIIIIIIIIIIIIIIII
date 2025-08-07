@@ -61,11 +61,11 @@
                             <p id="sustitucion" class="mt-1"></p>
                         </div>
                         <div class="paso">
-                            <p class="text-sm font-medium text-blue-600">Paso 2: Desarrollo del binomio</p>
+                            <p class="text-sm font-medium text-blue-600">Paso 2 y 3: Desarrollo y simplificación</p>
                             <p id="simplificacion" class="mt-1"></p>
                         </div>
                         <div class="paso">
-                            <p class="text-sm font-medium text-blue-600">Paso 3: Aplicación del límite</p>
+                            <p class="text-sm font-medium text-blue-600">Paso 4: Aplicación del límite</p>
                             <p id="limite-final" class="mt-1"></p>
                         </div>
                     </div>
@@ -105,101 +105,103 @@
     <script>
         function calcularDerivada(tipo) {
             try {
-                const funcion = document.getElementById('funcion').value.trim();
-                const variable = document.getElementById('variable').value.trim();
-                const parser = math.parse(funcion);
+                const funcionRaw = document.getElementById('funcion').value.trim();
+                const variable = document.getElementById('variable').value.trim() || 'x';
+                const funcion = funcionRaw.replace(/\s+/g, '');
 
-                // Ocultar secciones antes de mostrar las correspondientes
                 document.getElementById('pasos-formales').classList.add('hidden');
                 document.getElementById('resultado-directo').classList.add('hidden');
 
-                if(tipo === 'formal') {
+                if (tipo === 'formal') {
                     document.getElementById('pasos-formales').classList.remove('hidden');
 
                     // Paso 1: Definición formal
                     document.getElementById('sustitucion').innerHTML = `
                         \\[
-                        f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}
+                        f'(x) = \\lim_{h \\to 0} \\frac{f(${variable}+h) - f(${variable})}{h}
                         \\]
                         \\[
-                        f'(x) = \\lim_{h \\to 0} \\frac{${funcion.replace(new RegExp(variable, 'g'), `${variable} + h`)} - ${funcion}}{h}
+                        f'(x) = \\lim_{h \\to 0} \\frac{${funcion.replace(new RegExp(variable, 'g'), `${variable}+h`)} - ${funcion}}{h}
                         \\]
                     `;
 
-                    // Analizar si la función es un polinomio cuadrático simple ax^2 o x^2
-                    const funcionLimpia = funcion.replace(/\s+/g, '');
-                    const cuadraticaMatch = funcionLimpia.match(/^(\d*\.?\d*)x\^2$/);
-
-                    if(cuadraticaMatch) {
-                        let coef = 1;
-                        if(cuadraticaMatch[1] !== '') {
-                            coef = parseFloat(cuadraticaMatch[1]);
-                        }
-                        // Paso 2: Desarrollo del binomio
-                        const paso2 = `
-                            \\[
-                            (x + h)^2 = x^2 + 2xh + h^2
-                            \\]
-                        `;
-                        // Paso 3: Sustitución y cancelación de términos
-                        const paso3 = `
-                            \\[
-                            \\frac{${coef}x^2 + ${2 * coef}xh + ${coef}h^2 - ${coef}x^2}{h} = 
-                            \\frac{${2 * coef}xh + ${coef}h^2}{h}
-                            \\]
-                        `;
-
-                        // Paso 4: Simplificación
-                        const paso4 = `
-                            \\[
-                            = ${2 * coef}x + ${coef}h
-                            \\]
-                        `;
-
-                        // Paso 5: Aplicar límite
-                        const paso5 = `
-                            \\[
-                            \\lim_{h \\to 0} \\left(${2 * coef}x + ${coef}h\\right) = ${2 * coef}x
-                            \\]
-                        `;
-
-                        // Mostrar desarrollo
-                        document.getElementById('simplificacion').innerHTML = paso2 + paso3 + paso4;
-                        document.getElementById('limite-final').innerHTML = paso5;
+                    // Intentar derivar paso a paso para potencias simples ax^n
+                    const pasosFormales = generarPasosFormalesPotencia(funcion, variable);
+                    if (pasosFormales) {
+                        document.getElementById('simplificacion').innerHTML = pasosFormales.desarrollo;
+                        document.getElementById('limite-final').innerHTML = pasosFormales.limite;
                     } else {
-                        document.getElementById('simplificacion').innerHTML = 'Desarrollo paso a paso disponible solo para funciones cuadráticas sencillas (ejemplo: x^2).';
+                        document.getElementById('simplificacion').innerHTML = 'Desarrollo paso a paso disponible solo para potencias simples de la forma \\(a x^{n}\\).';
+                        const derivadaDirecta = math.derivative(funcionRaw, variable).toString();
                         document.getElementById('limite-final').innerHTML = `
-                            \\[
-                            \\text{Derivada aproximada con regla formal: } ${math.derivative(funcion, variable).toString()}
-                            \\]
+                          \\[
+                          \\text{Derivada aproximada: } ${derivadaDirecta}
+                          \\]
                         `;
                     }
                 } else {
                     // Método directo con explicación de reglas
-                    const derivada = math.derivative(funcion, variable);
+                    const derivada = math.derivative(funcionRaw, variable);
                     const steps = [];
 
                     derivada.traverse(node => {
-                        if(node.isOperatorNode && node.op === '^') {
+                        if (node.isOperatorNode && node.op === '^') {
                             steps.push(`Aplicando regla de la potencia: \\[ \\frac{d}{d${variable}}${node.toString()} = ${node.args[1]} ${node.args[0].toString()}^{${node.args[1]-1}} \\]`);
                         }
-                        if(node.isFunctionNode) {
+                        if (node.isFunctionNode) {
                             steps.push(`Aplicando regla para ${node.name}: \\[ \\frac{d}{d${variable}}${node.toString()} = ${math.derivative(node.toString(), variable).toString()} \\]`);
                         }
                     });
 
                     document.getElementById('resultado-directo').classList.remove('hidden');
-                    document.getElementById('componentes').innerHTML = `Función descompuesta: \\[ ${parser.toString()} \\]`;
-                    document.getElementById('reglas-aplicadas').innerHTML = steps.join('<div class="my-2"></div>') || 'No se identificaron reglas específicas.';
-                    document.getElementById('simplificacion-directa').innerHTML = `\\[ \\frac{d}{d${variable}}(${funcion}) = ${derivada.toString()} \\]`;
+                    document.getElementById('componentes').innerHTML = `Función descompuesta: \\[ ${math.parse(funcionRaw).toString()} \\]`;
+                    document.getElementById('reglas-aplicadas').innerHTML = steps.join('<br>') || 'No se identificaron reglas específicas.';
+                    document.getElementById('simplificacion-directa').innerHTML = `\\[ \\frac{d}{d${variable}}(${funcionRaw}) = ${derivada.toString()} \\]`;
                 }
 
-                graficarFuncionYDerivada(funcion, variable);
+                graficarFuncionYDerivada(funcionRaw, variable);
 
                 MathJax.typeset();
             } catch (error) {
                 alert(`Error: ${error.toString().replace('Error: ', '')}`);
             }
+        }
+
+        // Helper para generar pasos formales para potencias simples ax^n
+        function generarPasosFormalesPotencia(funcion, variable) {
+            // Intentar extraer coeficiente y exponente de la forma ax^n
+            const regex = /^([\d\.]*)\*?x\^(\d+)$/i;
+            const match = funcion.match(regex);
+            if (!match) return null;
+
+            let a = match[1] === '' ? 1 : parseFloat(match[1]);
+            const n = parseInt(match[2], 10);
+
+            // Construir desarrollo paso a paso en LaTeX
+            const desarrollo = `
+                \\[
+                (${variable} + h)^${n} = \\sum_{k=0}^{${n}} \\binom{${n}}{k} ${variable}^{${n}-k} h^{k}
+                \\]
+                \\[
+                = ${variable}^${n} + ${n}${variable}^{${n - 1}}h + \\ldots + h^{${n}}
+                \\]
+                \\[
+                \\frac{${a}(${variable} + h)^${n} - ${a}${variable}^${n}}{h} = 
+                \\frac{${a}${variable}^${n} + ${a}${n}${variable}^{${n - 1}}h + \\ldots + ${a}h^{${n}} - ${a}${variable}^${n}}{h}
+                \\]
+                \\[
+                = \\frac{${a}${n}${variable}^{${n - 1}}h + \\ldots + ${a}h^{${n}}}{h} =
+                ${a}${n}${variable}^{${n - 1}} + \\ldots + ${a}h^{${n - 1}}
+                \\]
+            `;
+
+            const limite = `
+                \\[
+                \\lim_{h \\to 0} \\left(${a}${n}${variable}^{${n - 1}} + \\ldots + ${a}h^{${n - 1}}\\right) = ${a}${n}${variable}^{${n - 1}}
+                \\]
+            `;
+
+            return { desarrollo, limite };
         }
 
         function graficarFuncionYDerivada(funcionStr, variableStr) {
