@@ -1,60 +1,86 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <!-- Mantener mismo head y estilos -->
-</head>
-<body>
-    <!-- Interfaz sin cambios -->
-    
-    <script>
-    // FUNCIÓN CORREGIDA: crearExplicacionLarga
-    function crearExplicacionLarga(funcion) {
-        let pasos = "";
-        try {
-            const expr = cleanExpr(funcion);
+// Función que crea la explicación larga usando el método formal de derivación por definición de límite
+function crearExplicacionLarga(funcion) {
+    // Intentamos manejar funciones que sean polinomios en x
+    // Extraemos términos (asumiendo suma de potencias de x, ej: x^3 + 2*x^2 + x + 5)
+    // Para simplicidad, el método formal lo aplicamos término a término y luego sumamos
+
+    const terminos = funcion.match(/([+-]?[^+-]+)/g); // separa términos sumados/restados
+    if (!terminos) return "No se pudieron identificar términos para la explicación detallada.";
+
+    let pasos = `Derivación usando el método formal con límite:\n\n`;
+    pasos += `f(x) = ${funcion}\n\n`;
+    pasos += `Definición formal de la derivada:\n`;
+    pasos += `f'(x) = lim_{h→0} [f(x+h) - f(x)] / h\n\n`;
+
+    let derivadaTotal = ""; // para ir formando derivada total simbólica
+
+    terminos.forEach((term, i) => {
+        term = term.trim();
+        if (term === "") return;
+
+        // Identificamos coeficiente y exponente
+        // Caso x^n, cx^n, x, c constantes
+        let coeficiente = 0;
+        let exponente = 0;
+        let esConstante = false;
+
+        const termMatch = term.match(/([+-]?\s*\d*\.?\d*)\*?x(?:\^(\d+))?/);
+        if (termMatch) {
+            // término con x
+            coeficiente = termMatch[1] ? parseFloat(termMatch[1].replace(/\s+/g, '')) : (termMatch[1]?.includes("-") ? -1 : 1);
+            if (isNaN(coeficiente)) coeficiente = term[0] === "-" ? -1 : 1;
+            exponente = termMatch[2] ? parseInt(termMatch[2]) : 1;
             
-            // Validación mejorada
-            if(!/^[0-9xX\+\-\*\/\^\(\)\.sincostanlogexpln]+$/.test(expr)) {
-                throw new Error("Caracteres no permitidos");
+            // Ahora los pasos para cada término con potencia:
+            pasos += `Para el término: ${term}\n`;
+            pasos += `f(x) = ${coeficiente} * x^${exponente}\n`;
+            pasos += `Paso 1 – Definición formal:\n`;
+            pasos += `f'(x) = lim_{h→0} [ ${coeficiente} * (x + h)^${exponente} - ${coeficiente} * x^${exponente} ] / h\n`;
+
+            // Desarrollo binomial (simplificado al desarrollo de (x+h)^n)
+            if(exponente === 1) {
+                pasos += `(x + h)^1 = x + h\n`;
+                pasos += `Sustituyendo:\n`;
+                pasos += `lim_{h→0} [ ${coeficiente} (x + h) - ${coeficiente} x ] / h = lim_{h→0} [${coeficiente} x + ${coeficiente} h - ${coeficiente} x ] / h\n`;
+                pasos += `Simplificando:\n`;
+                pasos += `lim_{h→0} [${coeficiente} h] / h = lim_{h→0} ${coeficiente} = ${coeficiente}\n\n`;
+                derivadaTotal += `${coeficiente}`;
+            } else {
+                // Binomio expandido
+                pasos += `Paso 2 – Desarrollo del binomio:\n`;
+                pasos += `(x + h)^${exponente} = `;
+
+                // Expandir binomio limitado a n=2 o 3 para simplicidad
+                if (exponente === 2) {
+                    pasos += `x^2 + 2*x*h + h^2\n`;
+                    pasos += `Sustituyendo:\n`;
+                    pasos += `lim_{h→0} [ ${coeficiente} (x^2 + 2*x*h + h^2) - ${coeficiente} x^2 ] / h = lim_{h→0} [ ${coeficiente}(2*x*h + h^2)] / h\n`;
+                    pasos += `Paso 3 – Cancelar términos:\n`;
+                    pasos += `lim_{h→0} [ 2*${coeficiente}*x*h + ${coeficiente}*h^2 ] / h = lim_{h→0} [2*${coeficiente}*x + ${coeficiente}*h]\n`;
+                    pasos += `Paso 4 – Aplicar el límite:\n`;
+                    pasos += `= 2*${coeficiente}*x\n\n`;
+                    derivadaTotal += ` + ${2*coeficiente}*x`;
+                } else {
+                    // Para exponentes mayores, no hacer expansión completa, usar regla general
+                    pasos += `(binomio expandido)\n`;
+                    pasos += `Por la regla del binomio, la derivada es:\n`;
+                    pasos += `f'(x) = ${coeficiente} * ${exponente} * x^${exponente - 1}\n\n`;
+                    derivadaTotal += ` + ${coeficiente*exponente}*x^${exponente-1}`;
+                }
             }
-            
-            const f = math.parse(expr);
-            const variables = f.filter(node => node.isSymbolNode && node.name !== 'x');
-            if(variables.length > 0) {
-                throw new Error("Solo se permite la variable 'x'");
+        } else {
+            // término constante
+            let c = parseFloat(term.replace(/\s+/g, ''));
+            if (!isNaN(c)) {
+                pasos += `Para el término constante ${c} la derivada es 0.\n\n`;
+            } else {
+                pasos += `No se reconoce el término ${term} para derivar.\n\n`;
             }
-
-            // Paso 1: Construcción del límite
-            pasos += `[1] Definición formal:\nf'(x) = limₕ→₀ [f(x+h) - f(x)] / h\n`;
-            const f_xh = math.parse(expr.replace(/x/g, '(x+h)'));
-            pasos += `Sustitución:\n${f_xh.toString()} - ${f.toString()}\n\n`;
-
-            // Paso 2: Desarrollo algebraico
-            const numerador = math.simplify(math.subtract(f_xh, f));
-            pasos += `[2] Simplificación del numerador:\n${numerador.toString()}\n\n`;
-
-            // Paso 3: División por h
-            if(!numerador.toString().includes('h')) {
-                throw new Error("No se detectó cambio con h - revise la función");
-            }
-            const paso3 = math.simplify(math.divide(numerador, 'h'));
-            pasos += `[3] División por h:\n${paso3.toString()}\n\n`;
-
-            // Paso 4: Aplicación del límite
-            const limite = math.simplify(paso3.replace(/h/g, 0));
-            pasos += `[4] Límite cuando h→0:\n${limite.toString()}\n\n`;
-            pasos += `✅ Derivada final:\nf'(x) = ${limite}`;
-
-        } catch (e) {
-            pasos = `❌ Error en el cálculo:\n${e.message}\n\nRecomendaciones:\n`
-                   + `• Use solo 'x' como variable\n`
-                   + `• Verifique paréntesis balanceados\n`
-                   + `• Use notación matemática estándar`;
         }
-        return pasos;
-    }
+    });
 
-    // Resto de funciones igual al código anterior...
-    </script>
-</body>
-</html>
+    pasos += `Resultado final:\n`;
+    pasos += `f'(x) = ${derivadaTotal.trim().replace(/^\+ /, '')}\n`;
+
+    return pasos;
+}
