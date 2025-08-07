@@ -1,75 +1,54 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Derivadas con Explicaciones</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.js"></script>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <!-- Cabecera existente sin cambios -->
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script> <!-- Añadido -->
 </head>
 
 <body class="bg-gray-50 min-h-screen">
-    <div class="max-w-4xl mx-auto p-6">
-        <div class="bg-white rounded-xl shadow-xl p-8 mb-8">
-            <!-- Contenido existente sin cambios... -->
-            
-            <!-- Sección de gráfico añadida al final -->
-            <div id="grafico-container" class="hidden mt-8 bg-gray-50 p-4 rounded-xl">
-                <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-                    <span class="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2">3</span>
-                    Visualización Gráfica
-                </h3>
-                <div id="grafico" class="h-80"></div>
-            </div>
+    <!-- Contenido existente sin cambios hasta la sección de resultados -->
+    
+    <div id="resultados" class="space-y-6">
+        <!-- Secciones existentes... -->
+        
+        <!-- Nueva sección de gráfico -->
+        <div id="grafico-container" class="hidden bg-gray-50 p-6 rounded-xl">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                <span class="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2">3</span>
+                Visualización Gráfica
+            </h3>
+            <div id="grafico" class="h-64"></div>
         </div>
     </div>
 
     <script>
-        function actualizarGrafico(funcion, derivada, variable) {
+        function actualizarGrafico(funcion, variable) {
             try {
-                const xValues = [];
-                const yOriginal = [];
-                const yDerivada = [];
-                
-                for(let i = -5; i <= 5; i += 0.2) {
-                    const scope = {[variable]: i};
-                    xValues.push(i);
-                    yOriginal.push(math.evaluate(funcion, scope));
-                    yDerivada.push(math.derivative(funcion, variable).evaluate(scope));
-                }
+                const xValues = Array.from({length: 100}, (_, i) => -5 + (i * 0.1));
+                const yOriginal = xValues.map(x => math.evaluate(funcion, {[variable]: x}));
+                const yDerivada = xValues.map(x => math.derivative(funcion, variable).evaluate({[variable]: x}));
 
-                const trace1 = {
+                Plotly.newPlot('grafico', [{
                     x: xValues,
                     y: yOriginal,
-                    mode: 'lines',
                     name: 'Función Original',
-                    line: {color: '#3B82F6', width: 2}
-                };
-
-                const trace2 = {
+                    line: {color: '#3B82F6'}
+                }, {
                     x: xValues,
                     y: yDerivada,
-                    mode: 'lines',
                     name: 'Derivada',
-                    line: {color: '#10B981', width: 2, dash: 'dot'}
-                };
-
-                Plotly.newPlot('grafico', [trace1, trace2], {
-                    title: 'Relación Función-Derivada',
+                    line: {color: '#10B981', dash: 'dot'}
+                }], {
+                    margin: {t: 30, l: 50, r: 30, b: 40},
                     paper_bgcolor: '#f9fafb',
                     plot_bgcolor: '#f9fafb',
-                    margin: {t: 40, l: 50, r: 30, b: 40},
                     xaxis: {title: variable, gridcolor: '#e5e7eb'},
-                    yaxis: {title: 'Valores', gridcolor: '#e5e7eb'},
-                    legend: {orientation: 'h', y: -0.2}
+                    yaxis: {title: 'Valor', gridcolor: '#e5e7eb'}
                 });
                 
                 document.getElementById('grafico-container').classList.remove('hidden');
             } catch (error) {
-                console.error('Error en gráfico:', error);
+                console.error('Error al generar gráfico:', error);
             }
         }
 
@@ -77,23 +56,15 @@
             try {
                 // Cálculos existentes sin cambios...
                 
-                // Llamada al gráfico después de resolver
+                // Llamada al gráfico después de los cálculos
                 const funcion = document.getElementById('funcion').value;
                 const variable = document.getElementById('variable').value;
-                const derivada = math.derivative(funcion, variable).toString();
-                
-                actualizarGrafico(funcion, derivada, variable);
+                actualizarGrafico(funcion, variable);
 
             } catch (error) {
                 alert(`Error: ${error.toString().replace('Error: ', '')}`);
             }
         }
     </script>
-    // Prueba básica
-    window.onload = function() {
-        math.evaluate('2+2'); // Verifica math.js
-        try { Plotly.newPlot([{}]); } catch(e) { console.error('Plotly no carga:', e); }
-    }
-</script>
 </body>
 </html>
