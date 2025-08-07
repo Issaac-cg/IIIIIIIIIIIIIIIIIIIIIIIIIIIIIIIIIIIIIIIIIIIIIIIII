@@ -1,69 +1,123 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- ... (cabecera existente sin cambios) ... -->
-    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script> <!-- Añadido -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Derivadas Avanzada</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.6.0/lib/browser/math.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
-<body class="bg-gray-50 min-h-screen">
-    <!-- ... (contenido existente sin cambios) ... -->
-
-    <div id="resultados" class="space-y-6">
-        <!-- ... (secciones existentes) ... -->
+<body class="bg-slate-900 text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-center text-blue-400">Calculadora de Derivadas Avanzada</h1>
         
-        <!-- Nueva sección de gráfico -->
-        <div id="grafico-container" class="hidden bg-gray-50 p-6 rounded-xl">
-            <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-                <span class="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2">3</span>
-                Visualización Gráfica
-            </h3>
-            <div id="grafico" class="h-64"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Sección de Entrada -->
+            <div class="bg-slate-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4">Configuración</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block mb-2">Función f(x):</label>
+                        <input type="text" id="funcion" 
+                               class="w-full bg-slate-700 rounded-lg p-3 focus:ring-2 focus:ring-blue-400"
+                               placeholder="Ej: x^2 + 3*x - 5">
+                    </div>
+                    <div>
+                        <label class="block mb-2">Variable:</label>
+                        <input type="text" id="variable" value="x" 
+                               class="w-20 bg-slate-700 rounded-lg p-3 text-center">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Resultados -->
+            <div class="bg-slate-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4">Resultados</h2>
+                <div class="space-y-4">
+                    <button onclick="calcularDerivada('corto')" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Método Corto
+                    </button>
+                    <button onclick="calcularDerivada('largo')" 
+                            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Método Largo (Límite)
+                    </button>
+                    <div id="resultado" class="bg-slate-700 p-4 rounded-lg mt-4 text-lg font-mono"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="bg-slate-800 p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4">Gráfico de la Función y su Derivada</h2>
+            <div id="grafico" class="w-full h-96"></div>
         </div>
     </div>
 
     <script>
-        function actualizarGrafico(funcion, variable) {
+        function calcularDerivada(metodo) {
             try {
-                const xValues = Array.from({length: 100}, (_, i) => -5 + (i * 0.1));
-                const yOriginal = xValues.map(x => math.evaluate(funcion, {[variable]: x}));
-                const yDerivada = xValues.map(x => math.derivative(funcion, variable).evaluate({[variable]: x}));
+                const funcion = document.getElementById('funcion').value;
+                const variable = document.getElementById('variable').value;
+                let derivada;
 
-                Plotly.newPlot('grafico', [{
-                    x: xValues,
-                    y: yOriginal,
-                    name: 'Función Original',
-                    line: {color: '#3B82F6'}
-                }, {
-                    x: xValues,
-                    y: yDerivada,
-                    name: 'Derivada',
-                    line: {color: '#10B981', dash: 'dot'}
-                }], {
-                    margin: {t: 30, l: 50, r: 30, b: 40},
-                    paper_bgcolor: '#f9fafb',
-                    plot_bgcolor: '#f9fafb',
-                    xaxis: {title: variable, gridcolor: '#e5e7eb'},
-                    yaxis: {title: 'Valor', gridcolor: '#e5e7eb'}
-                });
-                
-                document.getElementById('grafico-container').classList.remove('hidden');
+                if(metodo === 'corto') {
+                    derivada = math.derivative(funcion, variable).toString();
+                } else {
+                    const h = 0.0001;
+                    const f = math.compile(funcion);
+                    const f_x_plus_h = math.parse(funcion.replace(new RegExp(variable, 'g'), `(${variable}+${h})`));
+                    const derivadaLargo = math.simplify(`(${f_x_plus_h}-${funcion})/${h}`).toString();
+                    derivada = math.parse(derivadaLargo).toString();
+                }
+
+                document.getElementById('resultado').innerHTML = `
+                    <div class="space-y-2">
+                        <p class="text-blue-400">Función original: \[f(${variable}) = ${funcion}\]</p>
+                        <p class="text-green-400">Derivada (${metodo}): \[f'(${variable}) = ${derivada}\]</p>
+                    </div>
+                `;
+
+                actualizarGrafico(funcion, derivada, variable);
             } catch (error) {
-                console.error('Error al generar gráfico:', error);
+                document.getElementById('resultado').innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
             }
         }
 
-        function calcularDerivada(tipo) {
-            try {
-                // ... (código existente sin cambios) ...
-                
-                // Llamada al gráfico después de los cálculos
-                const funcion = document.getElementById('funcion').value;
-                const variable = document.getElementById('variable').value;
-                actualizarGrafico(funcion, variable);
+        function actualizarGrafico(funcion, derivada, variable) {
+            const xValues = Array.from({length: 100}, (_, i) => -5 + i * 0.1);
+            const f = math.compile(funcion);
+            const df = math.compile(derivada);
 
-            } catch (error) {
-                alert(`Error: ${error.toString().replace('Error: ', '')}`);
-            }
+            const yValues = xValues.map(x => f.evaluate({[variable]: x}));
+            const dyValues = xValues.map(x => df.evaluate({[variable]: x}));
+
+            const trace1 = {
+                x: xValues,
+                y: yValues,
+                name: 'Función Original',
+                line: {color: '#60a5fa'}
+            };
+
+            const trace2 = {
+                x: xValues,
+                y: dyValues,
+                name: 'Derivada',
+                line: {color: '#34d399'}
+            };
+
+            const layout = {
+                title: 'Gráfico de la Función y su Derivada',
+                paper_bgcolor: '#1e293b',
+                plot_bgcolor: '#1e293b',
+                font: {color: '#f8fafc'},
+                xaxis: {gridcolor: '#475569'},
+                yaxis: {gridcolor: '#475569'},
+                showlegend: true
+            };
+
+            Plotly.newPlot('grafico', [trace1, trace2], layout);
         }
     </script>
 </body>
