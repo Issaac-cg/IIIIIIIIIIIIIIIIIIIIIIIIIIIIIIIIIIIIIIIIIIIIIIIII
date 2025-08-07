@@ -61,11 +61,11 @@
                             <p id="sustitucion" class="mt-1"></p>
                         </div>
                         <div class="paso">
-                            <p class="text-sm font-medium text-blue-600">Paso 2 y 3: Desarrollo y simplificación</p>
+                            <p class="text-sm font-medium text-blue-600">Paso 2: Simplificación</p>
                             <p id="simplificacion" class="mt-1"></p>
                         </div>
                         <div class="paso">
-                            <p class="text-sm font-medium text-blue-600">Paso 4: Aplicación del límite</p>
+                            <p class="text-sm font-medium text-blue-600">Paso 3: Aplicación del límite</p>
                             <p id="limite-final" class="mt-1"></p>
                         </div>
                     </div>
@@ -125,20 +125,38 @@
                         \\]
                     `;
 
-                    // Intentar derivar paso a paso para potencias simples ax^n
-                    const pasosFormales = generarPasosFormalesPotencia(funcion, variable);
-                    if (pasosFormales) {
-                        document.getElementById('simplificacion').innerHTML = pasosFormales.desarrollo;
-                        document.getElementById('limite-final').innerHTML = pasosFormales.limite;
-                    } else {
-                        document.getElementById('simplificacion').innerHTML = 'Desarrollo paso a paso disponible solo para potencias simples de la forma \\(a x^{n}\\).';
+                    // Detectar potencias simples ax^n (simplificado)
+                    const regex = /^([\d\.]*)\*?x\^(\d+)$/i;
+                    const match = funcion.match(regex);
+
+                    if (!match) {
+                        document.getElementById('simplificacion').innerHTML = 'Desarrollo paso a paso solo disponible para potencias simples \\(a x^{n}\\).';
                         const derivadaDirecta = math.derivative(funcionRaw, variable).toString();
                         document.getElementById('limite-final').innerHTML = `
-                          \\[
-                          \\text{Derivada aproximada: } ${derivadaDirecta}
-                          \\]
+                            \\[
+                            \\text{Derivada calculada: } ${derivadaDirecta}
+                            \\]
                         `;
+                        return;
                     }
+
+                    let a = match[1] === '' ? 1 : parseFloat(match[1]);
+                    const n = parseInt(match[2], 10);
+
+                    // Paso 2: Simplificación básica
+                    document.getElementById('simplificacion').innerHTML = `
+                        \\[
+                        \\frac{${a} (x+h)^${n} - ${a} x^{${n}}}{h} = ${a} \\cdot \\frac{(x+h)^${n} - x^{${n}}}{h}
+                        \\]
+                    `;
+
+                    // Paso 3: Aplicación del límite
+                    document.getElementById('limite-final').innerHTML = `
+                        \\[
+                        \\lim_{h \\to 0} ${a} \\cdot \\frac{(x+h)^${n} - x^{${n}}}{h} = ${a} \\cdot ${n} x^{${n - 1}}
+                        \\]
+                    `;
+
                 } else {
                     // Método directo con explicación de reglas
                     const derivada = math.derivative(funcionRaw, variable);
@@ -165,43 +183,6 @@
             } catch (error) {
                 alert(`Error: ${error.toString().replace('Error: ', '')}`);
             }
-        }
-
-        // Helper para generar pasos formales para potencias simples ax^n
-        function generarPasosFormalesPotencia(funcion, variable) {
-            // Intentar extraer coeficiente y exponente de la forma ax^n
-            const regex = /^([\d\.]*)\*?x\^(\d+)$/i;
-            const match = funcion.match(regex);
-            if (!match) return null;
-
-            let a = match[1] === '' ? 1 : parseFloat(match[1]);
-            const n = parseInt(match[2], 10);
-
-            // Construir desarrollo paso a paso en LaTeX
-            const desarrollo = `
-                \\[
-                (${variable} + h)^${n} = \\sum_{k=0}^{${n}} \\binom{${n}}{k} ${variable}^{${n}-k} h^{k}
-                \\]
-                \\[
-                = ${variable}^${n} + ${n}${variable}^{${n - 1}}h + \\ldots + h^{${n}}
-                \\]
-                \\[
-                \\frac{${a}(${variable} + h)^${n} - ${a}${variable}^${n}}{h} = 
-                \\frac{${a}${variable}^${n} + ${a}${n}${variable}^{${n - 1}}h + \\ldots + ${a}h^{${n}} - ${a}${variable}^${n}}{h}
-                \\]
-                \\[
-                = \\frac{${a}${n}${variable}^{${n - 1}}h + \\ldots + ${a}h^{${n}}}{h} =
-                ${a}${n}${variable}^{${n - 1}} + \\ldots + ${a}h^{${n - 1}}
-                \\]
-            `;
-
-            const limite = `
-                \\[
-                \\lim_{h \\to 0} \\left(${a}${n}${variable}^{${n - 1}} + \\ldots + ${a}h^{${n - 1}}\\right) = ${a}${n}${variable}^{${n - 1}}
-                \\]
-            `;
-
-            return { desarrollo, limite };
         }
 
         function graficarFuncionYDerivada(funcionStr, variableStr) {
@@ -258,6 +239,7 @@
                 return margen + altoGraf - ((y - yMin) / (yMax - yMin)) * altoGraf;
             }
 
+            // Dibujar ejes
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 1;
 
@@ -271,6 +253,7 @@
             ctx.lineTo(aX(0), margen + altoGraf);
             ctx.stroke();
 
+            // Graficar función en azul
             ctx.strokeStyle = 'blue';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -287,6 +270,7 @@
             }
             ctx.stroke();
 
+            // Graficar derivada en rojo
             ctx.strokeStyle = 'red';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -303,6 +287,7 @@
             }
             ctx.stroke();
 
+            // Leyendas
             ctx.fillStyle = 'blue';
             ctx.fillRect(margen + 10, margen + 10, 20, 10);
             ctx.fillStyle = 'black';
