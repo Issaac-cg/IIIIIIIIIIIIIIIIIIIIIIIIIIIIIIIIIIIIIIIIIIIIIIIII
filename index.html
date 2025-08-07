@@ -1,212 +1,301 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Calculadora de Derivadas</title>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            max-width: 800px;
-            background: white;
-            margin: 2rem;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        label {
-            font-weight: 600;
-            display: block;
-            margin: 1rem 0 0.5rem;
-        }
-        input[type="text"] {
-            width: 100%;
-            height: 2.5rem;
-            font-size: 1.1rem;
-            padding: 0 0.5rem;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            font-size: 1.1rem;
-            padding: 0.7rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 1rem;
-            width: 100%;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .output-section {
-            margin-top: 2rem;
-        }
-        .explanation {
-            background: #eef4ff;
-            border-left: 6px solid #007bff;
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 6px;
-            white-space: pre-wrap;
-            font-family: Consolas, monospace;
-        }
-        #plot {
-            margin-top: 2rem;
-            height: 400px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Derivadas con Explicaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
-<body>
-<div class="container">
-    <h1>Calculadora de Derivadas</h1>
-    <label for="functionInput">Función (en variable x):</label>
-    <input type="text" id="functionInput" placeholder="Ejemplo: x^3 + 2*x^2 + x" />
-    <button onclick="calcularDerivada()">Calcular derivada y graficar</button>
 
-    <div class="output-section">
-        <h3>Derivada paso a paso (forma larga):</h3>
-        <div id="longStep" class="explanation"></div>
-        
-        <h3>Derivada forma corta:</h3>
-        <div id="shortStep" class="explanation"></div>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="bg-white rounded-xl shadow-xl p-8 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b-2 border-blue-200 pb-4">Calculadora Profesional de Derivadas</h1>
+            
+            <div class="grid gap-6 mb-8">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Función matemática:</label>
+                        <input type="text" id="funcion" 
+                               class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Ej: 3x^2 + cos(2x) - e^x">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Variable de derivación:</label>
+                        <input type="text" id="variable" value="x" 
+                               class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
 
-        <h3>Gráfica de la función y su derivada:</h3>
-        <div id="plot"></div>
+            <div class="flex flex-wrap gap-4 mb-8">
+                <button onclick="calcularDerivada('formal')" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                    </svg>
+                    Método Formal
+                </button>
+                <button onclick="calcularDerivada('directa')" 
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    Método Directo
+                </button>
+            </div>
+
+            <div id="resultados" class="space-y-6">
+                <!-- Sección Método Formal -->
+                <div id="pasos-formales" class="hidden bg-gray-50 p-6 rounded-xl">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                        <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2">1</span>
+                        Proceso Formal por Límites
+                    </h3>
+                    <div id="pasos-contenido" class="text-gray-700 space-y-4">
+                        <div class="paso">
+                            <p class="text-sm font-medium text-blue-600">Paso 1: Definición formal</p>
+                            <p class="mt-1">\[ f'(x) = \lim_{h \to 0} \frac{f(x + h) - f(x)}{h} \]</p>
+                        </div>
+                        <div class="paso">
+                            <p class="text-sm font-medium text-blue-600">Paso 2: Sustitución en la función</p>
+                            <p id="sustitucion" class="mt-1"></p>
+                        </div>
+                        <div class="paso">
+                            <p class="text-sm font-medium text-blue-600">Paso 3: Simplificación algebraica</p>
+                            <p id="simplificacion" class="mt-1"></p>
+                        </div>
+                        <div class="paso">
+                            <p class="text-sm font-medium text-blue-600">Paso 4: Aplicación del límite</p>
+                            <p id="limite-final" class="mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sección Método Directo -->
+                <div id="resultado-directo" class="hidden bg-gray-50 p-6 rounded-xl">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                        <span class="bg-emerald-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2">2</span>
+                        Método de Reglas de Derivación
+                    </h3>
+                    <div id="pasos-directos" class="text-gray-700 space-y-4">
+                        <div class="paso">
+                            <p class="text-sm font-medium text-emerald-600">Paso 1: Identificar componentes</p>
+                            <p id="componentes" class="mt-1"></p>
+                        </div>
+                        <div class="paso">
+                            <p class="text-sm font-medium text-emerald-600">Paso 2: Aplicar reglas de derivación</p>
+                            <p id="reglas-aplicadas" class="mt-1"></p>
+                        </div>
+                        <div class="paso">
+                            <p class="text-sm font-medium text-emerald-600">Paso 3: Simplificar expresión</p>
+                            <p id="simplificacion-directa" class="mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenedor para gráfica -->
+                <div class="mt-8">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Gráfica de función y derivada</h3>
+                    <canvas id="grafica" width="700" height="400" class="border rounded-lg"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    // Función para derivar usando Math.js (simplificada, sin mostrar todos los pasos simbólicamente)
-    function derivarFuncion(expr) {
-        const x = math.symbolicUtils.symbol('x');
-        // math.derivative solo acepta cadena y variable
-        return math.derivative(expr, 'x').toString();
-    }
+    <script>
+        function calcularDerivada(tipo) {
+            try {
+                const funcion = document.getElementById('funcion').value;
+                const variable = document.getElementById('variable').value;
+                const parser = math.parse(funcion);
+                
+                // Ocultar secciones antes de mostrar las correspondientes
+                document.getElementById('pasos-formales').classList.add('hidden');
+                document.getElementById('resultado-directo').classList.add('hidden');
 
-    // Función para crear explicación detallada paso a paso (ejemplo con patrón simple)
-    function crearExplicacionLarga(funcion) {
-        // Esta función muestra un ejemplo general, en la práctica podría ampliarse para casos más complejos.
-        let pasos = "";
-        pasos += `Función original: f(x) = ${funcion}\n\n`;
-        pasos += "Paso 1: Identifique cada término y aplique la regla de derivación:\n";
-        // Trata de separar términos multiplicados y aplicar potencia
-        const terminos = funcion.match(/([+-]?\s*\d*\.?\d*)?\*?x(\^\d+)?|([+-]?\s*\d+\.?\d*)/g);
-        if (!terminos) {
-            pasos += "No se pudieron identificar términos correctamente para una explicación detallada.\n";
-            return pasos;
-        }
-        terminos.forEach((t, i) => {
-            if (t.includes('x')) {
-                let coeficiente = 1;
-                let exponente = 1;
-                let match = t.match(/([+-]?\s*\d*\.?\d*)?\*?x(\^(\d+))?/);
-                if (match) {
-                    coeficiente = match[1] ? parseFloat(match[1].replace(/\s+/g, '')) : 1;
-                    if (isNaN(coeficiente)) coeficiente = match[1].includes('-') ? -1 : 1;
-                    exponente = match[3] ? parseInt(match[3]) : 1;
+                if(tipo === 'formal') {
+                    // Proceso formal por límites
+                    const f = parser.compile();
+                    const h = 0.0001;
+                    const f_x = f.evaluate({[variable]: 0});
+                    const f_xh = f.evaluate({[variable]: h});
+                    
+                    document.getElementById('pasos-formales').classList.remove('hidden');
+                    document.getElementById('sustitucion').innerHTML = 
+                        `\\[ f(${variable} + h) = ${parser.toString().replace(new RegExp(variable, 'g'), `${variable} + h`)} \\]`;
+                    
+                    document.getElementById('simplificacion').innerHTML = 
+                        `\\[ \\frac{${math.format(f_xh, {precision: 6})} - ${math.format(f_x, {precision: 6})}}{h} \\]`;
+                    
+                    document.getElementById('limite-final').innerHTML = 
+                        `\\[ \\lim_{h \\to 0} \\frac{${math.format(f_xh, {precision: 6})} - ${math.format(f_x, {precision: 6})}}{h} = ${math.derivative(funcion, variable).toString()} \\]`;
+                    
+                } else {
+                    // Método directo con explicación de reglas
+                    const derivada = math.derivative(funcion, variable);
+                    const steps = [];
+                    
+                    derivada.traverse(node => {
+                        if(node.isOperatorNode && node.op === '^') {
+                            steps.push(`Aplicando regla de la potencia: \\[ \\frac{d}{d${variable}}${node.toString()} = ${node.args[1]} ${node.args[0].toString()}^{${node.args[1]-1}} \\]`);
+                        }
+                        if(node.isFunctionNode) {
+                            steps.push(`Aplicando regla para ${node.name}: \\[ \\frac{d}{d${variable}}${node.toString()} = ${math.derivative(node.toString(), variable).toString()} \\]`);
+                        }
+                    });
+                    
+                    document.getElementById('resultado-directo').classList.remove('hidden');
+                    document.getElementById('componentes').innerHTML = 
+                        `Función descompuesta: \\[ ${parser.toString()} \\]`;
+                    
+                    document.getElementById('reglas-aplicadas').innerHTML = 
+                        steps.join('<div class="my-2"></div>') || 'No se identificaron reglas específicas.';
+                    
+                    document.getElementById('simplificacion-directa').innerHTML = 
+                        `\\[ \\frac{d}{d${variable}}(${funcion}) = ${derivada.toString()} \\]`;
                 }
-                pasos += `- Para el término "${t.trim()}": aplique la regla de potencia:\n`;
-                pasos += `  Derivada = ${coeficiente} * ${exponente} * x^(${exponente - 1}) = ${coeficiente * exponente}x^${exponente - 1}\n\n`;
-            } else {
-                pasos += `- Para el término constante "${t.trim()}": la derivada es 0\n\n`;
+
+                // Graficar función y derivada
+                graficarFuncionYDerivada(funcion, variable);
+
+                MathJax.typeset();
+            } catch (error) {
+                alert(`Error: ${error.toString().replace('Error: ', '')}`);
             }
-        });
-        pasos += "Paso 2: Sumar las derivadas de cada término para obtener la derivada total.";
-        return pasos;
-    }
+        }
 
-    // Función para limpiar expresiones y prepararlas para math.js
-    function cleanExpr(expr) {
-        return expr.replace(/\^/g, '**').replace(/\s+/g, '');
-    }
+        function graficarFuncionYDerivada(funcionStr, variableStr) {
+            const canvas = document.getElementById('grafica');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Función para graficar con Plotly
-    function graficar(funcion, derivada) {
-        const xVals = [];
-        const yFunc = [];
-        const yDer = [];
-        for(let i = -10; i <= 10; i += 0.1) {
-            xVals.push(i);
+            const margen = 50;
+            const anchoGraf = canvas.width - 2 * margen;
+            const altoGraf = canvas.height - 2 * margen;
+
+            // Rango de valores de x para graficar
+            const xMin = -10;
+            const xMax = 10;
+            const pasos = 0.1;
+
+            // Evaluar función y derivada
+            let f, derivada;
             try {
-                yFunc.push(math.evaluate(funcion, {x:i}));
+                f = math.compile(funcionStr);
+                derivada = math.derivative(funcionStr, variableStr).compile();
             } catch {
-                yFunc.push(null);
+                // Si no se puede compilar, salir sin graficar
+                return;
             }
-            try {
-                yDer.push(math.evaluate(derivada, {x:i}));
-            } catch {
-                yDer.push(null);
+
+            // Obtener valores y límites para escalar la gráfica
+            const xs = [];
+            const ysFunc = [];
+            const ysDer = [];
+            for(let x = xMin; x <= xMax; x += pasos) {
+                xs.push(x);
+                try {
+                    ysFunc.push(f.evaluate({[variableStr]: x}));
+                } catch {
+                    ysFunc.push(null);
+                }
+                try {
+                    ysDer.push(derivada.evaluate({[variableStr]: x}));
+                } catch {
+                    ysDer.push(null);
+                }
             }
-        }
-        const traceFunc = {
-            x: xVals,
-            y: yFunc,
-            type: 'scatter',
-            mode: 'lines',
-            name: 'Función f(x)',
-            line: {color: 'blue'}
-        };
-        const traceDer = {
-            x: xVals,
-            y: yDer,
-            type: 'scatter',
-            mode: 'lines',
-            name: 'Derivada f\'(x)',
-            line: {color: 'red'}
-        };
-        const layout = {
-            title: 'Gráfica de la función y su derivada',
-            xaxis: {title: 'x'},
-            yaxis: {title: 'y'},
-            legend: {x: 0, y: 1}
-        };
-        Plotly.newPlot('plot', [traceFunc, traceDer], layout, {responsive:true});
-    }
 
-    function calcularDerivada() {
-        const funcionRaw = document.getElementById('functionInput').value.trim();
-        if (!funcionRaw) {
-            alert('Por favor ingrese una función.');
-            return;
-        }
-        const funcion = cleanExpr(funcionRaw);
-        let derivada;
-        try {
-            derivada = derivarFuncion(funcion);
-        } catch {
-            alert('Error al calcular la derivada. Revisa la función ingresada.');
-            return;
-        }
+            let valoresY = ysFunc.concat(ysDer).filter(v => v !== null && isFinite(v));
+            let yMin = Math.min(...valoresY);
+            let yMax = Math.max(...valoresY);
 
-        // Mostrar pasos
-        document.getElementById('longStep').textContent = crearExplicacionLarga(funcionRaw);
-        document.getElementById('shortStep').textContent = `f'(x) = ${derivada.replace(/\*\*/g, '^')}`;
+            if (yMin === yMax) { // Evitar división por cero al escalar
+                yMin -= 1;
+                yMax += 1;
+            }
 
-        // Graficar
-        graficar(funcion, derivada);
-        
-        // Actualizar MathJax para fórmulas si alguna fórmula compleja aparece (opcional)
-        MathJax.typesetPromise();
-    }
-</script>
+            // Función para transformar coordenadas a pixeles del canvas
+            function aX(x) {
+                return margen + ((x - xMin) / (xMax - xMin)) * anchoGraf;
+            }
+            function aY(y) {
+                return margen + altoGraf - ((y - yMin) / (yMax - yMin)) * altoGraf;
+            }
+
+            // Dibujar ejes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+
+            // Eje X
+            ctx.beginPath();
+            ctx.moveTo(margen, aY(0));
+            ctx.lineTo(margen + anchoGraf, aY(0));
+            ctx.stroke();
+
+            // Eje Y
+            ctx.beginPath();
+            ctx.moveTo(aX(0), margen);
+            ctx.lineTo(aX(0), margen + altoGraf);
+            ctx.stroke();
+
+            // Dibujar función en azul
+            ctx.strokeStyle = 'blue';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < xs.length; i++) {
+                const xPix = aX(xs[i]);
+                const yVal = ysFunc[i];
+                if (yVal === null || !isFinite(yVal)) {
+                    ctx.moveTo(xPix, aY(0));
+                } else {
+                    const yPix = aY(yVal);
+                    if (i === 0) ctx.moveTo(xPix, yPix);
+                    else ctx.lineTo(xPix, yPix);
+                }
+            }
+            ctx.stroke();
+
+            // Dibujar derivada en rojo
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < xs.length; i++) {
+                const xPix = aX(xs[i]);
+                const yVal = ysDer[i];
+                if (yVal === null || !isFinite(yVal)) {
+                    ctx.moveTo(xPix, aY(0));
+                } else {
+                    const yPix = aY(yVal);
+                    if (i === 0) ctx.moveTo(xPix, yPix);
+                    else ctx.lineTo(xPix, yPix);
+                }
+            }
+            ctx.stroke();
+
+            // Leyendas
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(margen + 10, margen + 10, 20, 10);
+            ctx.fillStyle = 'black';
+            ctx.fillText('f(x)', margen + 35, margen + 20);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(margen + 10, margen + 30, 20, 10);
+            ctx.fillStyle = 'black';
+            ctx.fillText('f\'(x)', margen + 35, margen + 40);
+
+            // Texto unidad para ejes
+            ctx.fillStyle = 'black';
+            ctx.font = '12px Arial';
+            ctx.fillText('0', aX(0) - 10, aY(0) + 15);
+            ctx.fillText(xMin, margen, aY(0) + 15);
+            ctx.fillText(xMax, margen + anchoGraf - 15, aY(0) + 15);
+            ctx.fillText(yMin.toFixed(2), aX(0) + 5, margen + altoGraf);
+            ctx.fillText(yMax.toFixed(2), aX(0) + 5, margen + 12);
+        }
+    </script>
 </body>
 </html>
