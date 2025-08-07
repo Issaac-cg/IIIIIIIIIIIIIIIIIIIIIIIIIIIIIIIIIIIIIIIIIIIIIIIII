@@ -89,5 +89,11 @@
             }
         }
     </script>
+    // Prueba básica
+    window.onload = function() {
+        math.evaluate('2+2'); // Verifica math.js
+        try { Plotly.newPlot([{}]); } catch(e) { console.error('Plotly no carga:', e); }
+    }
+</script>
 </body>
 </html>
