@@ -6,54 +6,19 @@
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.0/math.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #f0f2f5;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .input-group {
-            margin-bottom: 15px;
-        }
-        input[type="text"] {
-            width: 70%;
-            padding: 8px;
-            margin-right: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            padding: 8px 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #grafico {
-            margin-top: 20px;
-            height: 400px;
-        }
-        .resultado {
-            background-color: #f8f9fa;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 4px;
-            white-space: pre-wrap;
-        }
+        /* Estilos originales sin modificaciones */
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background-color: #f0f2f5; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .input-group { margin-bottom: 15px; }
+        input[type="text"] { width: 70%; padding: 8px; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        #grafico { margin-top: 20px; height: 400px; }
+        .resultado { background-color: #f8f9fa; padding: 15px; margin-top: 15px; border-radius: 4px; white-space: pre-wrap; }
     </style>
 </head>
 <body>
+    <!-- Interfaz original sin cambios -->
     <div class="container">
         <h2>Calculadora de Derivadas</h2>
         <div class="input-group">
@@ -73,9 +38,11 @@
     </div>
 
     <script>
+    // Versión corregida manteniendo estructura original
     function cleanExpr(expr) {
         return expr.replace(/ /g, '')
             .replace(/sen/g, 'sin')
+            .replace(/²/g, '^2').replace(/³/g, '^3')
             .replace(/(\d+)([a-zA-Z])/g, '$1*$2')
             .replace(/([a-zA-Z])(\d+)/g, '$1*$2')
             .replace(/([a-zA-Z])(\()/g, '$1*$2');
@@ -84,30 +51,25 @@
     function derivarFuncion(funcion) {
         try {
             const expr = math.parse(cleanExpr(funcion));
-            const derivada = math.derivative(expr, 'x');
-            return math.simplify(derivada).toString();
+            return math.simplify(math.derivative(expr, 'x')).toString();
         } catch (e) {
-            return "Error en la función ingresada";
+            return "Error: Verifique la sintaxis de la función";
         }
     }
 
     function crearExplicacionCorta(funcion) {
         const derivada = derivarFuncion(funcion);
-        return `Método directo:\nf'(x) = ${derivada}`;
+        return derivada.includes("Error") ? derivada : `Método directo:\nf'(x) = ${derivada}`;
     }
 
     function crearExplicacionLarga(funcion) {
         let pasos = "";
-        const expr = cleanExpr(funcion);
-        
         try {
-            // Paso 1: Definición formal
-            pasos += `Paso 1 – Definición formal:\n`;
-            pasos += `f'(x) = limₕ→₀ [f(x+h) - f(x)] / h\n`;
-            pasos += `Sustituyendo f(x) = ${funcion}:\n`;
-            pasos += `f'(x) = limₕ→₀ [${funcion.replace(/x/g, '(x+h)')} - ${funcion}] / h\n\n`;
+            const expr = cleanExpr(funcion);
+            if(!/^[0-9xX\+\-\*\/\^\(\)\.sincostanlgexp]+$/.test(expr)) {
+                throw new Error("Caracteres no permitidos detectados");
+            }
 
-            // Desarrollo algebraico
             const f_x = math.parse(expr);
             const f_xh = f_x.transform(node => {
                 if (node.isSymbolNode && node.name === 'x') {
@@ -115,33 +77,23 @@
                 }
                 return node;
             });
+
+            // Desarrollo del límite formal
+            pasos += `Paso 1 – Definición formal:\nf'(x) = limₕ→₀ [f(x+h) - f(x)] / h\n`;
+            pasos += `Sustituyendo f(x) = ${funcion}:\n${math.parse(expr.replace(/x/g, '(x+h)')).toString()} - ${funcion}\n\n`;
             
             const numerador = math.simplify(math.subtract(f_xh, f_x));
-            const paso2 = math.simplify(numerador).toString().replace(/\*\*/g, '^');
+            pasos += `Paso 2 – Desarrollo algebraico:\n${numerador.toString().replace(/\*\*/g, '^')}\n\n`;
             
-            // Paso 2: Desarrollo del binomio
-            pasos += `Paso 2 – Desarrollo del binomio:\n`;
-            pasos += `${funcion.replace(/x/g, '(x+h)')} = ${paso2}\n\n`;
+            const paso3 = math.simplify(math.divide(numerador, 'h'));
+            pasos += `Paso 3 – División por h:\n${paso3.toString().replace(/\*\*/g, '^')}\n\n`;
             
-            // Paso 3: Cancelar términos
-            const paso3 = math.simplify(math.divide(numerador, 'h')).toString().replace(/\*\*/g, '^');
-            pasos += `Paso 3 – Cancelar términos:\n`;
-            pasos += `= limₕ→₀ (${paso3})\n\n`;
-
-            // Paso 4: Simplificar
-            const paso4 = math.simplify(paso3.replace(/\/h/g, '')).toString().replace(/\*\*/g, '^');
-            pasos += `Paso 4 – Simplificar:\n`;
-            pasos += `= limₕ→₀ (${paso4})\n\n`;
-
-            // Paso 5: Aplicar límite
-            const limite = math.simplify(paso4.replace(/h/g, '0')).toString();
-            pasos += `Paso 5 – Aplicar el límite:\n`;
-            pasos += `= ${limite}\n\n`;
-
+            const limite = math.simplify(paso3.replace(/h/g, '0'));
+            pasos += `Paso 4 – Aplicación del límite:\n${limite.toString().replace(/\*\*/g, '^')}\n\n`;
             pasos += `Resultado final:\nf'(x) = ${limite}`;
 
         } catch (e) {
-            pasos = "No se pudo generar explicación detallada para esta función";
+            pasos = `Error en el cálculo: ${e.message}`;
         }
         return pasos;
     }
@@ -151,28 +103,17 @@
             const xValues = Array.from({length: 100}, (_, i) => (i - 50) * 0.1);
             const yOriginal = xValues.map(x => math.evaluate(funcion, {x}));
             const derivada = derivarFuncion(funcion);
+            
+            if(derivada.includes("Error")) throw new Error(derivada);
+            
             const yDerivada = xValues.map(x => math.evaluate(derivada, {x}));
 
-            const trace1 = {
-                x: xValues,
-                y: yOriginal,
-                mode: 'lines',
-                name: 'Función original'
-            };
-
-            const trace2 = {
-                x: xValues,
-                y: yDerivada,
-                mode: 'lines',
-                name: 'Derivada'
-            };
-
-            Plotly.newPlot('grafico', [trace1, trace2], {
-                title: 'Función y su Derivada',
-                margin: {t: 30}
-            });
+            Plotly.newPlot('grafico', [
+                {x: xValues, y: yOriginal, name: 'Función original'},
+                {x: xValues, y: yDerivada, name: 'Derivada'}
+            ], {margin: {t: 30}});
         } catch (e) {
-            document.getElementById('grafico').innerHTML = "Error al generar el gráfico";
+            document.getElementById('grafico').innerHTML = `<div class="error">${e.message}</div>`;
         }
     }
 
