@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Derivadas con Explicaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="bg-white rounded-xl shadow-xl p-8 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b-2 border-blue-200 pb-4">Calculadora Profesional de Derivadas</h1>
+            
+            <!-- Sección de entrada existente -->
+            <div class="grid gap-6 mb-8">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Función matemática:</label>
+                        <input type="text" id="funcion" 
+                                class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Ej: 3x^2 + cos(2x) - e^x">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Variable de derivación:</label>
+                        <input type="text" id="variable" value="x" 
+                                class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones existentes -->
+            <div class="flex flex-wrap gap-4 mb-8">
+                <button onclick="calcularDerivada('formal')" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                    </svg>
+                    Método Formal
+                </button>
+                <button onclick="calcularDerivada('directa')" 
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    Método Directo
+                </button>
+            </div>
+
+            <!-- Nuevo contenedor del gráfico -->
+            <div id="grafico-container" class="hidden mb-8 bg-gray-50 p-4 rounded-xl">
+                <div id="grafico" class="h-80"></div>
+            </div>
+
+            <!-- Sección de resultados existente -->
+            <div id="resultados" class="space-y-6">
+                <!-- Contenido original... -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function actualizarGrafico(funcion, derivada, variable) {
+            try {
+                const xValues = [];
+                const yOriginal = [];
+                const yDerivada = [];
+                
+                for(let i = -5; i <= 5; i += 0.2) {
+                    const scope = {[variable]: i};
+                    xValues.push(i);
+                    yOriginal.push(math.evaluate(funcion, scope));
+                    yDerivada.push(math.derivative(funcion, variable).evaluate(scope));
+                }
+
+                const trace1 = {
+                    x: xValues,
+                    y: yOriginal,
+                    mode: 'lines',
+                    name: 'Función Original',
+                    line: {color: '#3B82F6', width: 2}
+                };
+
+                const trace2 = {
+                    x: xValues,
+                    y: yDerivada,
+                    mode: 'lines',
+                    name: 'Derivada',
+                    line: {color: '#10B981', width: 2, dash: 'dot'}
+                };
+
+                Plotly.newPlot('grafico', [trace1, trace2], {
+                    title: 'Relación Función-Derivada',
+                    paper_bgcolor: '#f9fafb',
+                    plot_bgcolor: '#f9fafb',
+                    margin: {t: 40, l: 50, r: 30, b: 40},
+                    xaxis: {title: variable, gridcolor: '#e5e7eb'},
+                    yaxis: {title: 'Valores', gridcolor: '#e5e7eb'},
+                    legend: {orientation: 'h', y: -0.2}
+                });
+                
+                document.getElementById('grafico-container').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error en gráfico:', error);
+            }
+        }
+
+        function calcularDerivada(tipo) {
+            try {
+                const funcion = document.getElementById('funcion').value;
+                const variable = document.getElementById('variable').value;
+                const parser = math.parse(funcion);
+                const derivada = math.derivative(funcion, variable).toString();
+                
+                // Llamada al gráfico
+                actualizarGrafico(funcion, derivada, variable);
+
+                // Resto del código original...
+                
+            } catch (error) {
+                alert(`Error: ${error.toString().replace('Error: ', '')}`);
+            }
+        }
+    </script>
+</body>
+</html>
