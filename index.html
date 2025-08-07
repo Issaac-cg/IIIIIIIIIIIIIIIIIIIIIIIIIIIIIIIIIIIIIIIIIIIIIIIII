@@ -127,22 +127,11 @@
 </div>
 
 <script>
-    // Función para simplificar expresión con math.js y devolver cadena legible (usada para muestra)
-    function simplificarExpr(exprStr) {
-        try {
-            const exprNode = math.parse(exprStr);
-            const simplified = exprNode.simplify();
-            return simplified.toString();
-        } catch {
-            return exprStr;
-        }
-    }
-
-    // Función para sustituir variable x por (x + h) en la función con math.js
+    // Sustituir variable x por (x + h) en la expresión usando math.js
     function sustituirXporXmasH(funcionStr, variable) {
         try {
             const nodo = math.parse(funcionStr);
-            const nodoXMasH = nodo.transform(function (node, path, parent) {
+            const nodoXMasH = nodo.transform(function (node) {
                 if (node.isSymbolNode && node.name === variable) {
                     return new math.expression.node.OperatorNode('+', 'add', [
                         new math.expression.node.SymbolNode(variable),
@@ -157,61 +146,55 @@
         }
     }
 
-    // Función para generar el método completo paso a paso usando el método de los 4 pasos
+    // Método Completo con pasos claros y explicación para el procedimiento tradicional
     function metodoCompletoPasoAPaso(funcionStr, variable) {
-        // Paso 1: Evaluar f(x+h)
         const f_xmash = sustituirXporXmasH(funcionStr, variable);
-        if (!f_xmash) return "Error en el análisis de la función para f(x+h).";
+        if (!f_xmash) return "Error analizando la función para f(x+h).";
 
-        // Paso 2: Diferencia f(x+h) - f(x)
         const diferencia = `(${f_xmash}) - (${funcionStr})`;
-
-        // Paso 3: Cociente \frac{f(x+h)-f(x)}{h}
         const cociente = `((${diferencia})/h)`;
 
-        // Paso 4: Simplificar límite cuando h -> 0:
-        // Para simplificar este cociente, reemplazamos 'h' como símbolo y simplificamos
-        let exprSimplificadaStr;
-        let derivadaFinalStr;
+        let simplificadoStr;
         try {
-            // Crear expresión matemática
             const exprCociente = math.parse(cociente);
-
-            // Simplificar el cociente antes de tomar límite
-            const exprSimplificada = exprCociente.simplify();
-
-            exprSimplificadaStr = exprSimplificada.toString();
-
-            // Derivada final: es el límite cuando h->0, esto equivale a derivar con math.js como validación
-            derivadaFinalStr = math.derivative(funcionStr, variable).toString();
-
+            const exprSimplificado = exprCociente.simplify();
+            simplificadoStr = exprSimplificado.toString();
         } catch {
-            exprSimplificadaStr = cociente; // queda sin simplificar
-            derivadaFinalStr = "No se pudo calcular derivada final";
+            simplificadoStr = cociente;
         }
 
-        // Usamos MathJax LaTeX para mostrar todos los pasos formalmente
-        const contenidoHTML = `
-        <div>
-            <p><strong>Paso 1:</strong> Evaluar la función en \( ${variable} + h \):</p>
-            <p class="pl-4 mt-1 mb-3">\\[ f(${variable} + h) = ${f_xmash.replace(/\*/g, '')} \\]</p>
-        </div>
-        <div>
-            <p><strong>Paso 2:</strong> Calcular la diferencia \( f(${variable}+h) - f(${variable}) \):</p>
-            <p class="pl-4 mt-1 mb-3">\\[ ${diferencia.replace(/\*/g, '')} \\]</p>
-        </div>
-        <div>
-            <p><strong>Paso 3:</strong> Dividir entre \( h \) para formar el cociente incremental:</p>
-            <p class="pl-4 mt-1 mb-3">\\[ \\frac{f(${variable}+h) - f(${variable})}{h} = ${exprSimplificadaStr.replace(/\*/g, '')} \\]</p>
-        </div>
-        <div>
-            <p><strong>Paso 4:</strong> Tomar el límite cuando \( h \to 0 \):</p>
-            <p class="pl-4 mt-1 mb-3">\\[ \lim_{h \\to 0} ${exprSimplificadaStr.replace(/\*/g, '')} = ${derivadaFinalStr.replace(/\*/g, '')} \\]</p>
-        </div>`;
+        let derivadaFinalStr;
+        try {
+            derivadaFinalStr = math.derivative(funcionStr, variable).toString();
+        } catch {
+            derivadaFinalStr = "Error calculando derivada final";
+        }
 
-        return contenidoHTML;
+        return `
+            <div>
+                <p><strong>Paso 1:</strong> Evaluar la función en \( ${variable} + h \):</p>
+                <p class="pl-4 mt-1 mb-3">\\[ f(${variable} + h) = ${f_xmash.replace(/\*/g, '')} \\]</p>
+            </div>
+            <div>
+                <p><strong>Paso 2:</strong> Calcular el cociente diferencial:</p>
+                <p class="pl-4 mt-1 mb-3">\\[ \\frac{f(${variable} + h) - f(${variable})}{h} = \\frac{${f_xmash.replace(/\*/g, '')} - ${funcionStr.replace(/\*/g, '')}}{h} \\]</p>
+            </div>
+            <div>
+                <p><strong>Paso 3:</strong> Simplificar el cociente para cancelar \( h \):</p>
+                <p class="pl-4 mt-1 mb-3">\\[ ${simplificadoStr.replace(/\*/g, '')} \\]</p>
+            </div>
+            <div>
+                <p><strong>Paso 4:</strong> Aplicar el límite cuando \( h \to 0 \):</p>
+                <p class="pl-4 mt-1 mb-3">\\[ \\lim_{h \\to 0} ${simplificadoStr.replace(/\*/g, '')} = ${derivadaFinalStr.replace(/\*/g, '')} \\]</p>
+            </div>
+            <div>
+                <p><strong>Derivada final:</strong></p>
+                <p class="pl-4 mt-1 mb-3">\\[ f'(${variable}) = ${derivadaFinalStr.replace(/\*/g, '')} \\]</p>
+            </div>
+        `;
     }
 
+    // Función principal para calcular derivada dependiendo del tipo de método
     function calcularDerivada(tipo) {
         try {
             const funcion = document.getElementById('funcion').value.trim();
@@ -232,11 +215,10 @@
             document.getElementById('resultado-completo').classList.add('hidden');
 
             if (tipo === 'formal') {
-                // Método Formal: se evalúa en puntos numéricos para ilustrar límite
                 const parser = math.parse(funcion);
                 const f = parser.compile();
                 const h = 0.00001;
-                const val = 0; // evaluar en x=0 solo como ejemplo
+                const val = 0;
 
                 let f_x, f_xh;
                 try {
@@ -255,7 +237,6 @@
                 document.getElementById('limite-final').innerHTML = `\\[ \\lim_{h \\to 0} \\frac{${f_xh.toFixed(6)} - ${f_x.toFixed(6)}}{h} = ${limiteVal} \\approx ${derivSimbolica.replace(/\*/g, '')} \\]`;
 
             } else if (tipo === 'directa') {
-                // Método Directo: reglas simbólicas y explicación
                 const derivada = math.derivative(funcion, variable);
                 const pasos = [];
 
@@ -274,22 +255,19 @@
                 document.getElementById('simplificacion-directa').innerHTML = `\\[ \\frac{d}{d${variable}}(${funcion.replace(/\*/g, '')}) = ${derivada.toString().replace(/\*/g, '')} \\]`;
 
             } else if (tipo === 'completo') {
-                // Método Completo: usar método de los cuatro pasos
                 const contenido = metodoCompletoPasoAPaso(funcion, variable);
                 document.getElementById('resultado-completo').classList.remove('hidden');
                 document.getElementById('metodo-completo-contenido').innerHTML = contenido;
             }
 
-            // Siempre graficar la función y su derivada
             graficarFuncionYDerivada(funcion, variable);
-
             MathJax.typesetPromise();
         } catch (error) {
             alert("Error: " + error.toString());
         }
     }
 
-    // Función para graficar en canvas sin librerías externas
+    // Graficar función y derivada en canvas sin librerías externas
     function graficarFuncionYDerivada(funcionStr, variableStr) {
         const canvas = document.getElementById('grafica');
         const ctx = canvas.getContext('2d');
@@ -343,17 +321,15 @@
             return margen + altoGraf - ((y - yMin) / (yMax - yMin)) * altoGraf;
         }
 
-        // Dibujar ejes
+        // Ejes
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 1;
 
-        // Eje X
         ctx.beginPath();
         ctx.moveTo(margen, aY(0));
         ctx.lineTo(margen + anchoGraf, aY(0));
         ctx.stroke();
 
-        // Eje Y
         ctx.beginPath();
         ctx.moveTo(aX(0), margen);
         ctx.lineTo(aX(0), margen + altoGraf);
@@ -393,7 +369,7 @@
         }
         ctx.stroke();
 
-        // Leyenda
+        // Leyendas
         ctx.fillStyle = 'blue';
         ctx.fillRect(margen + 10, margen + 10, 20, 10);
         ctx.fillStyle = 'black';
@@ -404,7 +380,7 @@
         ctx.fillStyle = 'black';
         ctx.fillText("f'(x)", margen + 35, margen + 40);
 
-        // Textos ejes
+        // Ejes textos
         ctx.font = '12px Arial';
         ctx.fillStyle = 'black';
         ctx.fillText('0', aX(0) - 10, aY(0) + 15);
